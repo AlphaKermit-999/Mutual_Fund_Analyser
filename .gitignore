@@ -1,13 +1,21 @@
-# Virtual Environment
+# Virtual Environment folder
 venv/
 .venv/
 
-# Python cache
+# Python cache files
 __pycache__/
 *.pyc
 
-# VS Code settings
+# IDE-specific settings
 .vscode/
+.idea/
 
-# OS files
+# OS-specific files
 .DS_Store
+
+# Local secrets file
+.env
+
+# Database files (these will be generated on-the-fly)
+*.db
+*.db-journal*
