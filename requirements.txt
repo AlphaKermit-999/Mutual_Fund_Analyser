@@ -1,3 +1,17 @@
+# Core Data Libraries
 pandas
 requests
 SQLAlchemy
+numpy
+
+# Libraries for the Application 
+streamlit               # The web application framework
+plotly                  # For interactive charts
+python-dotenv           # For securely managing API keys
+fuzzywuzzy              # For smart string matching
+thefuzz                 # For smart string matching
+python-Levenshtein      # Speeds up thefuzz significantly
+
+# --- The Production GenAI Stack ---
+langchain               # The core LLM orchestration framework
+langchain-google-genai  # LangChain's specific integration for Google's models
