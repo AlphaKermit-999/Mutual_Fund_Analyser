@@ -60,7 +60,7 @@ def process_data(raw_data: str) -> tuple[pd.DataFrame, pd.DataFrame]:
                 # We explicitly use the correct index for each piece of data.
                 processed_records.append({
                     'scheme_code': fields[0],      # Index 0 is the Scheme Code
-                    'scheme_name': fields[2],      # Index 2 is the Scheme Name
+                    'scheme_name': fields[3],      # Index 2 is the Scheme Name
                     'nav':         fields[4],      # Index 4 is the Net Asset Value
                     'date':        fields[5]       # Index 5 is the Date
                 })
