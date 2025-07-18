@@ -24,7 +24,7 @@ else:
     # Code for the selectbox and displaying the scorecard and chart...
     # fund_options = funds_df.set_index('scheme_code')['scheme_name']
     fund_options = funds_df.set_index('scheme_name')['scheme_code']
-    print("funcd_options", fund_options)
+    print("fund_options", fund_options)
     selected_fund = st.selectbox("Select a Mutual Fund:", options=fund_options.index, index=None, placeholder="Search for a fund...")
     scheme_code = fund_options[selected_fund]
     if selected_fund:
