@@ -14,13 +14,12 @@ def generate_fund_scorecard(scheme_code: int) -> dict:
     """
     try:
         nav_history = get_nav_history_by_code(scheme_code)
-        
         # This initial check is a form of "early exit" error handling.
         if nav_history.empty or 'nav' not in nav_history.columns:
             return {"error": "NAV data is empty or invalid for this fund."}
             
         nav_series = nav_history['nav']
-        
+        print("nav_series", nav_series)
         # --- CALCULATIONS ---
         returns = calculate_returns_robust(nav_series)
         sharpe = calculate_sharpe_ratio(nav_series)
@@ -54,6 +53,7 @@ def generate_fund_scorecard(scheme_code: int) -> dict:
         logging.error(f"An unexpected error occurred in generate_fund_scorecard for scheme {scheme_code}: {e}", exc_info=True)
         # exc_info=True will add the full error traceback to the log for easy debugging.
         return {"error": "An unexpected internal error occurred during analysis. The development team has been notified."}
+
 
 def calculate_returns_robust(nav_series: pd.Series) -> dict[str, float]:
     """
@@ -91,14 +91,18 @@ def calculate_returns_robust(nav_series: pd.Series) -> dict[str, float]:
             
             num_years = months / 12.0
             total_return = (latest_nav / past_nav) - 1
-            annualized_return = ((1 + total_return) ** (1 / num_years)) - 1
-            returns[name] = annualized_return
+            if num_years < 1.0:
+                returns[name] = total_return
+            else:
+                annualized_return = ((1 + total_return) ** (1 / num_years)) - 1
+                returns[name] = annualized_return
         except Exception as e:
             # This block is a safety net for any unexpected numerical or date-related errors.
             logging.warning(f"Could not calculate return for period '{name}'. Reason: {e}")
             returns[name] = np.nan
             
     return returns
+
 
 def calculate_sharpe_ratio(nav_series: pd.Series) -> float:
     """

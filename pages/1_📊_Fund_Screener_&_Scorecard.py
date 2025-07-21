@@ -26,7 +26,6 @@ def load_data():
     return get_all_fund_data()
 
 funds_df = load_data()
-# print("funds_df", funds_df.head())
 
 if funds_df.empty:
     st.error("Could not load fund data. Please run the `scripts/build_database.py` script first.")

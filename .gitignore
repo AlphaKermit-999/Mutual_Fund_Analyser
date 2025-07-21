@@ -1,3 +1,4 @@
+# --- Python ---
 # Virtual Environment folder
 venv/
 .venv/
@@ -6,16 +7,24 @@ venv/
 __pycache__/
 *.pyc
 
-# IDE-specific settings
+# --- IDE and OS ---
 .vscode/
 .idea/
+*.DS_Store
 
-# OS-specific files
-.DS_Store
-
-# Local secrets file
+# --- Secrets ---
+# Never commit your local secrets file
 .env
 
-# Database files (these will be generated on-the-fly)
+# --- Database ---
+# The database is a build artifact, not source code
 *.db
 *.db-journal*
+
+# --- Lambda Deployment Artifacts ---
+# Ignore the entire folder used for packaging the Lambda function.
+# This folder contains downloaded libraries and the final zip file.
+lambda_deployment_package/
+
+# Also ignore any .zip files in the root directory.
+*.zip
