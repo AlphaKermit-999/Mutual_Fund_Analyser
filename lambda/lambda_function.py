@@ -9,6 +9,8 @@ import boto3
 from botocore.exceptions import ClientError
 from datetime import datetime
 
+from config import AMFI_NAV_URL
+
 # --- Configuration ---
 # Configure logging to work with AWS CloudWatch Logs
 logger = logging.getLogger()
@@ -19,7 +21,7 @@ SECRET_NAME = os.environ.get("SECRET_NAME")
 S3_LANDING_BUCKET = os.environ.get("S3_LANDING_BUCKET")
 S3_RAW_BUCKET = os.environ.get("S3_RAW_BUCKET")
 
-AMFI_NAV_URL = "https://www.amfiindia.com/spages/NAVAll.txt"
+# --- Functions ---
 
 def get_secret(secret_name):
     """Retrieves database credentials from AWS Secrets Manager."""
@@ -119,7 +121,7 @@ def lambda_handler(event, context):
     """
     try:
         # --- EXTRACT ---
-        logger.info("Step 1: Fetching data from AMFI...")
+        logger.info(f"Step 1: Fetching data from {AMFI_NAV_URL}...")
         response = requests.get(AMFI_NAV_URL, timeout=60)
         response.raise_for_status()
         raw_data = response.text
