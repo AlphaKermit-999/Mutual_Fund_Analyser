@@ -1,0 +1,7 @@
+FROM public.ecr.aws/lambda/python:3.13
+WORKDIR /app
+RUN dnf install -y zip
+COPY fetcher_requirements.txt .
+RUN pip install -r fetcher_requirements.txt --target .
+# Note the updated path to the specific fetcher function
+COPY lambda/fetcher_function.py ./lambda_function.py

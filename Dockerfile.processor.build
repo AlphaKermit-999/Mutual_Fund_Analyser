@@ -1,0 +1,7 @@
+FROM public.ecr.aws/lambda/python:3.13
+WORKDIR /app
+RUN dnf install -y zip
+COPY processor_requirements.txt .
+RUN pip install -r processor_requirements.txt --target .
+# Note the updated path to the specific processor function
+COPY lambda/processor_function.py ./lambda_function.py
