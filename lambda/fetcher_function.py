@@ -39,4 +39,5 @@ def lambda_handler(event, context):
         return {'statusCode': 200, 'body': f'File {s3_key} placed in landing zone.'}
     except Exception as e:
         logger.error(f"An error occurred in the fetcher: {e}", exc_info=True)
-        raise e # Reraise the exception to mark the Lambda execution as failed
+        raise e 
+        # Reraise the exception to mark the Lambda execution as failed
