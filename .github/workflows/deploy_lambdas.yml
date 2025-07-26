@@ -1,4 +1,4 @@
-# Name of your CI/CD Workflow
+# Name of your CI/CD Workflow via GHA
 name: Build and Deploy Lambda Functions to AWS
 
 # This workflow triggers on every push to the 'main' branch
@@ -51,4 +51,5 @@ jobs:
 
       - name: Deploy Processor Lambda Function
         run: aws lambda update-function-code --function-name mutualfunds_processor_lambda --s3-bucket mf-analyzer-code-artifacts-poc-22072025 --s3-key processor_package.zip
-        
+
+
