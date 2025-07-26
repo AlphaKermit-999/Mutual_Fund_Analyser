@@ -4,11 +4,10 @@ from dotenv import load_dotenv
 from fuzzywuzzy import process
 import pandas as pd
 
-# ---Local Imports---
 from .database import get_all_fund_data
 from .analysis_engine import generate_fund_scorecard
 
-# ---LangChain Imports---
+# --- LangChain Imports ---
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -18,8 +17,10 @@ load_dotenv()
 if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("GOOGLE_API_KEY not found in .env file. Please add it.")
 
-# --- The Custom Retriever ---
-# This part of the RAG pattern is the custom logic. It retrieves the context.
+# Configure logging for better debugging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# --- Step 1: The Custom Retriever ---
 def get_context_for_query(user_query: str) -> tuple[str, str | None]:
     """
     Retrieves the best-matching fund and its scorecard data.
@@ -28,7 +29,7 @@ def get_context_for_query(user_query: str) -> tuple[str, str | None]:
     """
     all_funds = get_all_fund_data()
     if all_funds.empty:
-        return None, "The fund database is currently empty. Please run the data pipeline."
+        return None, "The fund database is currently empty. Please ask the administrator to build the database."
 
     best_match = process.extractOne(user_query, all_funds['scheme_name'].tolist())
     
@@ -37,10 +38,13 @@ def get_context_for_query(user_query: str) -> tuple[str, str | None]:
 
     matched_fund_name = best_match[0]
     matched_scheme_code = all_funds[all_funds['scheme_name'] == matched_fund_name]['scheme_code'].iloc[0]
+    
+    # Explicitly cast to a standard Python int to be safe
+    scheme_code = int(matched_scheme_code)
 
-    scorecard = generate_fund_scorecard(matched_scheme_code)
+    scorecard = generate_fund_scorecard(scheme_code)
     if 'error' in scorecard:
-        return None, f"I found the fund '{matched_fund_name}', but an error occurred: {scorecard['error']}"
+        return None, f"I found the fund '{matched_fund_name}', but an error occurred while generating its scorecard: {scorecard['error']}"
 
     # Format the context string for the LLM
     context_str = f"Fund Name: {matched_fund_name}\n"
@@ -52,10 +56,8 @@ def get_context_for_query(user_query: str) -> tuple[str, str | None]:
     
     return matched_fund_name, context_str
 
-# --- The LangChain Orchestration ---
-# Defining the prompt, model, and parser as modular components.
+# --- Step 2: The LangChain Orchestration ---
 
-# The Prompt Template: A clear set of instructions for the LLM
 prompt_template = ChatPromptTemplate.from_template(
     """
     You are an expert Indian Mutual Fund Analyst. Your name is "FinBot".
@@ -72,33 +74,26 @@ prompt_template = ChatPromptTemplate.from_template(
     """
 )
 
-# The Model: An instance of the Gemini Pro model, configured for our use case.
-# Temperature controls creativity. Lower is better for factual tasks.
-model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3)
+# --- THE FIX IS HERE ---
+# We are now using the modern, faster, and more capable Gemini 2.5 Flash model.
+model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.3)
 
-# The Output Parser: Converts the LLM's complex output object into a simple string.
 output_parser = StrOutputParser()
-
-# The Chain: This is the core of LangChain. It links the components together
-# using the LangChain Expression Language (LCEL). It's a "pipeline".
 rag_chain = prompt_template | model | output_parser
 
 # --- Step 3: The Public-Facing Function ---
-# This is the single function our UI will call.
 def get_rag_response(user_query: str) -> str:
-    """
-    Orchestrates the RAG process and returns a final response string.
-    """
+    """Orchestrates the RAG process and returns a final response string."""
     matched_fund, context = get_context_for_query(user_query)
     
-    if not context:
-        # If get_context_for_query returned an error message
-        return matched_fund if matched_fund is None else context
+    # If get_context_for_query returned an error message in the 'context' part
+    if context is None:
+        return matched_fund # This would be the error message like "I couldn't find a fund..."
 
     try:
-        # Invoke the chain with the retrieved context and the original question.
         response = rag_chain.invoke({"context": context, "question": user_query})
         return response
     except Exception as e:
-        logging.error(f"An error occurred while invoking the RAG chain: {e}")
-        return "I'm sorry, an unexpected error occurred while processing your request. Please try again later."
+        logging.error(f"An error occurred while invoking the RAG chain: {e}", exc_info=True)
+        # Pass the specific API error back to the user for clarity
+        return f"I'm sorry, an error occurred while communicating with the AI model: {e}"
