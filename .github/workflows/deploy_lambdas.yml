@@ -5,7 +5,7 @@ name: Build and Deploy Lambda Functions to AWS
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build-and-deploy:
