@@ -1,0 +1,54 @@
+# Name of your CI/CD Workflow
+name: Build and Deploy Lambda Functions to AWS
+
+# This workflow triggers on every push to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # Use a standard, free Linux runner provided by GitHub
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        # This action is needed to build Docker images efficiently
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS Credentials
+        # This action securely configures the runner with your AWS secrets
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      # --- Build and Deploy the Fetcher Lambda ---
+      - name: Build Fetcher Docker Image
+        run: docker build -t fetcher-builder -f Dockerfile.fetcher.build .
+
+      - name: Create Fetcher Deployment Package (.zip)
+        run: docker run --rm --entrypoint="" -v "${{ github.workspace }}:/output" fetcher-builder sh -c "cd /app && zip -r /output/fetcher_package.zip ."
+
+      - name: Upload Fetcher Package to S3
+        run: aws s3 cp fetcher_package.zip s3://mf-analyzer-code-artifacts-poc-22072025/fetcher_package.zip
+
+      - name: Deploy Fetcher Lambda Function
+        run: aws lambda update-function-code --function-name mutualfunds_fetcher_lambda --s3-bucket mf-analyzer-code-artifacts-poc-22072025 --s3-key fetcher_package.zip
+
+      # --- Build and Deploy the Processor Lambda ---
+      - name: Build Processor Docker Image
+        run: docker build -t processor-builder -f Dockerfile.processor.build .
+
+      - name: Create Processor Deployment Package (.zip)
+        run: docker run --rm --entrypoint="" -v "${{ github.workspace }}:/output" processor-builder sh -c "cd /app && zip -r /output/processor_package.zip ."
+
+      - name: Upload Processor Package to S3
+        run: aws s3 cp processor_package.zip s3://mf-analyzer-code-artifacts-poc-22072025/processor_package.zip
+
+      - name: Deploy Processor Lambda Function
+        run: aws lambda update-function-code --function-name mutualfunds_processor_lambda --s3-bucket mf-analyzer-code-artifacts-poc-22072025 --s3-key processor_package.zip
+        
